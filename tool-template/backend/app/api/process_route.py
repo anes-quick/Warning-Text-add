@@ -21,12 +21,22 @@ OUT_NAME = "warning-text-output.mp4"
 def _overlays_dir() -> Path:
     override = os.environ.get("OVERLAY_ASSETS_DIR", "").strip()
     if override:
-        return Path(override)
+        p = Path(override)
+        if (p / "Bottom.png").is_file():
+            return p
     here = Path(__file__).resolve().parent
-    repo = here.parent.parent.parent.parent / "assets" / "overlays"
-    if (repo / "Bottom.png").is_file():
-        return repo
-    return here.parent.parent.parent / "assets" / "overlays"
+    candidates = [
+        Path("/app/assets/overlays"),
+        Path.cwd() / "assets" / "overlays",
+        here.parent.parent.parent.parent / "assets" / "overlays",
+        here.parent.parent.parent / "assets" / "overlays",
+    ]
+    for c in candidates:
+        if (c / "Bottom.png").is_file():
+            return c
+    logger.error("Overlay assets not found. Checked: %s", ", ".join(str(c) for c in candidates))
+    # Return the primary container path so the error message is predictable.
+    return Path("/app/assets/overlays")
 
 
 def _overlay_png(placement: str) -> Path:
